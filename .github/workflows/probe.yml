@@ -1,0 +1,28 @@
+name: probe
+on:
+  pull_request:
+  merge_group:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: observe
+        run: |
+          echo "::group::identity"
+          echo "event_name=${{ github.event_name }}"
+          echo "github.sha=${{ github.sha }}"
+          echo "github.ref=${{ github.ref }}"
+          echo "::endgroup::"
+          echo "::group::parents of github.sha (H P... subject)"
+          git log --format='%H %P %s' -6 "${{ github.sha }}"
+          echo "::endgroup::"
+          echo "::group::event payload"
+          cat "$GITHUB_EVENT_PATH"
+          echo "::endgroup::"
+      - name: gate
+        run: |
+          if [ -f FAIL ]; then echo "FAIL marker present: this entry must be ejected"; exit 1; fi
+          echo ok
